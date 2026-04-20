@@ -491,3 +491,4 @@ class DefaultExtension extends MProvider {
     return url.includes("?") ? "&" : "?";
   }
 }
+

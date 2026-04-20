@@ -259,3 +259,4 @@ class OtakuDesu extends MProvider {
 OtakuDesu main(MSource source) {
   return OtakuDesu(source: source);
 }
+

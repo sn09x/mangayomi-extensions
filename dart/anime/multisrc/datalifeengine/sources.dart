@@ -4,7 +4,7 @@ import 'src/wiflix/wiflix.dart';
 
 const _datalifeengineVersion = "0.0.65";
 const _datalifeengineSourceCodeUrl =
-    "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/anime/multisrc/datalifeengine/datalifeengine.dart";
+    "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/anime/multisrc/datalifeengine/datalifeengine.dart";
 
 List<Source> get datalifeengineSourcesList => _datalifeengineSourcesList;
 List<Source> _datalifeengineSourcesList =
@@ -20,3 +20,4 @@ List<Source> _datalifeengineSourcesList =
             ..version = _datalifeengineVersion,
         )
         .toList();
+

@@ -8,7 +8,8 @@ Source _origamiorpheansSource = Source(
   lang: "pt-br",
   typeSource: "mangareader",
   iconUrl:
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/manga/multisrc/mangareader/src/pt/origamiorpheans/icon.png",
+      "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/manga/multisrc/mangareader/src/pt/origamiorpheans/icon.png",
   dateFormat: "MMMMM dd, yyyy",
   dateFormatLocale: "pt-br",
 );
+

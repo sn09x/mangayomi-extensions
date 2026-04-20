@@ -3,7 +3,7 @@ const mangayomiSources = [{
     "lang": "en",
     "baseUrl": "https://allmanga.to",
     "apiUrl": "https://api.allanime.day/api",
-    "iconUrl": "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/javascript/icon/en.allanime.png",
+    "iconUrl": "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/main/javascript/icon/en.allanime.png",
     "typeSource": "single",
     "itemType": 1,
     "isNsfw": false,
@@ -512,4 +512,5 @@ class AllAnimeExtractor {
         return videoList;
     }
 }
+
 

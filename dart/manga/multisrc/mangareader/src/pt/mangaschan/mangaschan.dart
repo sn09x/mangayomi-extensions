@@ -8,7 +8,8 @@ Source _mangaschanSource = Source(
   isNsfw: false,
   typeSource: "mangareader",
   iconUrl:
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/manga/multisrc/mangareader/src/pt/mangaschan/icon.png",
+      "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/manga/multisrc/mangareader/src/pt/mangaschan/icon.png",
   dateFormat: "MMMMM dd, yyyy",
   dateFormatLocale: "pt-br",
 );
+

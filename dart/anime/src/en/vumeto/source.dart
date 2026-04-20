@@ -5,15 +5,16 @@ import '../../../../../model/source.dart';
 Source get vumetoSource => _vumetoSource;
 const _vumetoVersion = "0.0.55";
 const _vumetoSourceCodeUrl =
-    "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/anime/src/en/vumeto/vumeto.dart";
+    "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/anime/src/en/vumeto/vumeto.dart";
 Source _vumetoSource = Source(
   name: "Vumeto",
   baseUrl: "https://vumeto.com",
   lang: "en",
   typeSource: "single",
   iconUrl:
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/anime/src/en/vumeto/icon.png",
+      "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/anime/src/en/vumeto/icon.png",
   sourceCodeUrl: _vumetoSourceCodeUrl,
   version: _vumetoVersion,
   itemType: ItemType.anime,
 );
+

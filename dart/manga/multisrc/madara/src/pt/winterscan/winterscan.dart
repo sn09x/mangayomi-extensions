@@ -9,7 +9,8 @@ Source _winterscanSource = Source(
 
   typeSource: "madara",
   iconUrl:
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/manga/multisrc/madara/src/pt/winterscan/icon.png",
+      "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/manga/multisrc/madara/src/pt/winterscan/icon.png",
   dateFormat: "dd 'de' MMMM 'de' yyyy",
   dateFormatLocale: "pt-br",
 );
+

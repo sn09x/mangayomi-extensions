@@ -585,3 +585,4 @@ Enter your custom user agent string below:""",
 AllManga main(MSource source) {
   return AllManga(source: source);
 }
+

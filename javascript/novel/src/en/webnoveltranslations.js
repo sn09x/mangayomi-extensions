@@ -145,3 +145,4 @@ class DefaultExtension extends MProvider {
         throw new Error("getSourcePreferences not implemented");
     }
 }
+

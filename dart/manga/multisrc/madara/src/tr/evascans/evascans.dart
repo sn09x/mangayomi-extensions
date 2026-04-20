@@ -9,7 +9,8 @@ Source _evascansSource = Source(
 
   typeSource: "madara",
   iconUrl:
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/manga/multisrc/madara/src/tr/evascans/icon.png",
+      "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/manga/multisrc/madara/src/tr/evascans/icon.png",
   dateFormat: "MMM d, yyy",
   dateFormatLocale: "tr",
 );
+

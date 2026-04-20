@@ -304,3 +304,4 @@ class Filma24 extends MProvider {
 Filma24 main(MSource source) {
   return Filma24(source: source);
 }
+

@@ -1147,3 +1147,4 @@ class GogoAnime extends MProvider {
 GogoAnime main(MSource source) {
   return GogoAnime(source: source);
 }
+

@@ -648,3 +648,4 @@ class DefaultExtension extends MProvider {
     return this.base64UrlEncodeBytes(bytes);
   }
 }
+

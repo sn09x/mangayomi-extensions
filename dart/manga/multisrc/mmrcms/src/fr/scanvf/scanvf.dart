@@ -9,7 +9,8 @@ Source _scanvfSource = Source(
 
   typeSource: "mmrcms",
   iconUrl:
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/manga/multisrc/mmrcms/src/fr/scanvf/icon.png",
+      "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/manga/multisrc/mmrcms/src/fr/scanvf/icon.png",
   dateFormat: "d MMM. yyyy",
   dateFormatLocale: "en_us",
 );
+

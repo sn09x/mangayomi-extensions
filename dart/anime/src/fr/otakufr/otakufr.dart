@@ -505,3 +505,4 @@ class OtakuFr extends MProvider {
 OtakuFr main(MSource source) {
   return OtakuFr(source: source);
 }
+

@@ -537,3 +537,4 @@ class MangaPark extends MProvider {
 MangaPark main(MSource source) {
   return MangaPark(source:source);
 }
+

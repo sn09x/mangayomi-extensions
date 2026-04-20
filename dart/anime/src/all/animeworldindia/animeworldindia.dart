@@ -428,3 +428,4 @@ class AnimeWorldIndia extends MProvider {
 AnimeWorldIndia main(MSource source) {
   return AnimeWorldIndia(source: source);
 }
+

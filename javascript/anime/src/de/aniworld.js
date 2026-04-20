@@ -3,7 +3,7 @@ const mangayomiSources = [{
     "lang": "de",
     "baseUrl": "https://aniworld.to",
     "apiUrl": "",
-    "iconUrl": "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/javascript/icon/de.aniworld.png",
+    "iconUrl": "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/main/javascript/icon/de.aniworld.png",
     "typeSource": "single",
     "itemType": 1,
     "isNsfw": false,
@@ -931,3 +931,4 @@ function absUrl(url, base) {
         return base.slice(0, base.lastIndexOf('/') + 1) + url;
     }
 }
+

@@ -8,7 +8,8 @@ Source _borutoexplorerSource = Source(
   isNsfw: false,
   typeSource: "madara",
   iconUrl:
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/dart/manga/multisrc/madara/src/pt/borutoexplorer/icon.png",
+      "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/main/dart/manga/multisrc/madara/src/pt/borutoexplorer/icon.png",
   dateFormat: "dd 'de' MMMMM 'de' yyyy",
   dateFormatLocale: "pt-br",
 );
+

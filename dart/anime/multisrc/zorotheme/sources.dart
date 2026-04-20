@@ -4,7 +4,7 @@ import 'src/kaido/kaido.dart';
 
 const _zorothemeVersion = "0.2.15";
 const _zorothemeSourceCodeUrl =
-    "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/anime/multisrc/zorotheme/zorotheme.dart";
+    "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/anime/multisrc/zorotheme/zorotheme.dart";
 
 List<Source> get zorothemeSourcesList => _zorothemeSourcesList;
 List<Source> _zorothemeSourcesList =
@@ -20,3 +20,4 @@ List<Source> _zorothemeSourcesList =
             ..version = _zorothemeVersion,
         )
         .toList();
+

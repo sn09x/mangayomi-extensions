@@ -306,3 +306,4 @@ class AnimesVision extends MProvider {
 AnimesVision main(MSource source) {
   return AnimesVision(source: source);
 }
+

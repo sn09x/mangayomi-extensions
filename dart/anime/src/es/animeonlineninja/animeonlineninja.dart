@@ -350,3 +350,4 @@ class AnimeOnlineNinja extends MProvider {
 AnimeOnlineNinja main(MSource source) {
   return AnimeOnlineNinja(source: source);
 }
+

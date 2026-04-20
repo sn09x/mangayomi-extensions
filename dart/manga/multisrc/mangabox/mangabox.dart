@@ -376,3 +376,4 @@ Map<String, String> getHeader(String url) {
 MangaBox main(MSource source) {
   return MangaBox(source: source);
 }
+

@@ -119,3 +119,4 @@ class Source {
 const branchName = "main";
 
 enum ItemType { manga, anime, novel }
+

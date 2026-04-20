@@ -575,3 +575,4 @@ class DopeFlix extends MProvider {
 DopeFlix main(MSource source) {
   return DopeFlix(source: source);
 }
+

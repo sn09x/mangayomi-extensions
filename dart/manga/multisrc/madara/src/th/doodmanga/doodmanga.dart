@@ -9,7 +9,8 @@ Source _doodmangaSource = Source(
 
   typeSource: "madara",
   iconUrl:
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/$branchName/dart/manga/multisrc/madara/src/th/doodmanga/icon.png",
+      "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/$branchName/dart/manga/multisrc/madara/src/th/doodmanga/icon.png",
   dateFormat: "dd MMMMM yyyy",
   dateFormatLocale: "th",
 );
+

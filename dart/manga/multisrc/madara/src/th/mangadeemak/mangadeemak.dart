@@ -8,7 +8,8 @@ Source _mangadeemakSource = Source(
   isNsfw: false,
   typeSource: "madara",
   iconUrl:
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/dart/manga/multisrc/madara/src/th/mangadeemak/icon.png",
+      "https://raw.githubusercontent.com/sn09x/mangayomi-extensions/main/dart/manga/multisrc/madara/src/th/mangadeemak/icon.png",
   dateFormat: "d MMMM yyyy",
   dateFormatLocale: "th",
 );
+

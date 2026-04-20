@@ -218,3 +218,4 @@ class Nyaa extends MProvider {
 Nyaa main(MSource source) {
   return Nyaa(source: source);
 }
+

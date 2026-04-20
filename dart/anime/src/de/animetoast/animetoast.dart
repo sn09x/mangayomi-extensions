@@ -248,3 +248,4 @@ class AnimeToast extends MProvider {
 AnimeToast main(MSource source) {
   return AnimeToast(source: source);
 }
+

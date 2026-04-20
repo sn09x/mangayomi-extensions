@@ -553,3 +553,4 @@ class AnimeSama extends MProvider {
 AnimeSama main(MSource source) {
   return AnimeSama(source: source);
 }
+

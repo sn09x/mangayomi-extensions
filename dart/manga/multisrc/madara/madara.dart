@@ -522,3 +522,4 @@ class Madara extends MProvider {
 Madara main(MSource source) {
   return Madara(source: source);
 }
+

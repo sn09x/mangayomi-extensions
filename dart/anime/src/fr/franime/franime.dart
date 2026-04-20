@@ -407,3 +407,4 @@ class FrAnime extends MProvider {
 FrAnime main(MSource source) {
   return FrAnime(source: source);
 }
+

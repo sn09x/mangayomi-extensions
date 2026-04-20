@@ -371,3 +371,4 @@ class YoMovies extends MProvider {
 YoMovies main(MSource source) {
   return YoMovies(source: source);
 }
+

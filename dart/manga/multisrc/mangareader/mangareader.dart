@@ -394,3 +394,4 @@ class MangaReader extends MProvider {
 MangaReader main(MSource source) {
   return MangaReader(source: source);
 }
+

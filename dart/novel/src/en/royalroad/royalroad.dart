@@ -399,3 +399,4 @@ class RoyalRoadSource extends MProvider {
 RoyalRoadSource main(MSource source) {
   return RoyalRoadSource(source: source);
 }
+

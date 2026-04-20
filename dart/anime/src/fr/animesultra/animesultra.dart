@@ -245,3 +245,4 @@ class AnimesUltra extends MProvider {
 AnimesUltra main(MSource source) {
   return AnimesUltra(source: source);
 }
+

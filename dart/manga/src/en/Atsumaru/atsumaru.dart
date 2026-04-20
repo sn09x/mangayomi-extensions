@@ -418,3 +418,4 @@ class Atsumaru extends MProvider {
 Atsumaru main(MSource source) {
   return Atsumaru(source: source);
 }
+

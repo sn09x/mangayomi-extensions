@@ -20,3 +20,4 @@ List<Source> dartMangasourceList = [
   atsumaruSource,
   allanimeSource,
 ];
+
