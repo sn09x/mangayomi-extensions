@@ -1,19 +1,17 @@
 const mangayomiSources = [
   {
-    "id": 5738565392,
-    "name": "Comix",
+    "id": 1234567891,
+    "name": "Kagane",
     "lang": "en",
-    "baseUrl": "https://comix.to",
-    "apiUrl": "https://comix.to/api/v2/",
-    "iconUrl": "https://comix.to/images/icon_512x512.png",
+    "baseUrl": "https://kagane.org",
+    "apiUrl": "https://yuzuki.kagane.org/api/v2/",
+    "iconUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT-LtpILLImUWhnfZz1KnRQTRGSiVYTetGYOg&s",
     "typeSource": "single",
     "itemType": 0,
     "version": "0.1.0",
-    "pkgPath": "manga/src/en/comix.js"
+    "pkgPath": "manga/src/en/kagane.js"
   }
 ];
-
-const NSFW_GENRE_IDS = ["87264", "87265", "87266", "87268"];
 
 class DefaultExtension extends MProvider {
   constructor() {
@@ -22,7 +20,7 @@ class DefaultExtension extends MProvider {
   }
 
   get apiUrl() {
-    return this.source.apiUrl || "https://comix.to/api/v2/";
+    return this.source.apiUrl || "https://yuzuki.kagane.org/api/v2/";
   }
 
   getHeaders(url) {
@@ -132,9 +130,6 @@ class DefaultExtension extends MProvider {
       limit: 50,
       page,
     };
-    if (this.getPreference("nsfw_pref", "show") === "hide") {
-      params["exclude_genres[]"] = NSFW_GENRE_IDS;
-    }
     const url = this.buildUrl("manga", params);
     return this._searchFromUrl(url);
   }
@@ -149,11 +144,6 @@ class DefaultExtension extends MProvider {
     let sortValue = "desc";
 
     // Process filters
-    // Apply NSFW preference
-    if (this.getPreference("nsfw_pref", "show") === "hide") {
-      params["exclude_genres[]"] = NSFW_GENRE_IDS;
-    }
-
     for (const filter of filters || []) {
       if (filter.type_name === "SelectFilter" && filter.name === "Sort") {
         const opt = filter.values[filter.state];
@@ -186,37 +176,6 @@ class DefaultExtension extends MProvider {
         }
         if (included.length) params["genres[]"] = included;
         if (excluded.length) params["exclude_genres[]"] = excluded;
-      } else if (
-        filter.type_name === "GroupFilter" &&
-        filter.name === "Demographic"
-      ) {
-        const included = [];
-        const excluded = [];
-        for (const f of filter.state) {
-          if (f.state === 1) included.push(f.value);
-          else if (f.state === 2) excluded.push(f.value);
-        }
-        if (included.length) params["demographics[]"] = included;
-        if (excluded.length) params["exclude_demographics[]"] = excluded;
-      } else if (
-        filter.type_name === "TextFilter" &&
-        filter.name === "Min Chapters"
-      ) {
-        if (filter.state && filter.state !== "") {
-          params["count[from]"] = filter.state;
-        }
-      } else if (
-        filter.type_name === "SelectFilter" &&
-        filter.name === "Year From"
-      ) {
-        const opt = filter.values[filter.state];
-        if (opt && opt.value !== "") params["release_year[from]"] = opt.value;
-      } else if (
-        filter.type_name === "SelectFilter" &&
-        filter.name === "Year To"
-      ) {
-        const opt = filter.values[filter.state];
-        if (opt && opt.value !== "") params["release_year[to]"] = opt.value;
       }
     }
 
@@ -433,95 +392,12 @@ class DefaultExtension extends MProvider {
       },
       {
         type_name: "GroupFilter",
-        name: "Genres",
-        state: [
-          { type_name: "TriState", name: "Action", value: "6" },
-          { type_name: "TriState", name: "Adult", value: "87264" },
-          { type_name: "TriState", name: "Adventure", value: "7" },
-          { type_name: "TriState", name: "Boys Love", value: "8" },
-          { type_name: "TriState", name: "Comedy", value: "9" },
-          { type_name: "TriState", name: "Crime", value: "10" },
-          { type_name: "TriState", name: "Drama", value: "11" },
-          { type_name: "TriState", name: "Ecchi", value: "87265" },
-          { type_name: "TriState", name: "Fantasy", value: "12" },
-          { type_name: "TriState", name: "Girls Love", value: "13" },
-          { type_name: "TriState", name: "Hentai", value: "87266" },
-          { type_name: "TriState", name: "Historical", value: "14" },
-          { type_name: "TriState", name: "Horror", value: "15" },
-          { type_name: "TriState", name: "Isekai", value: "16" },
-          { type_name: "TriState", name: "Magical Girls", value: "17" },
-          { type_name: "TriState", name: "Mature", value: "87267" },
-          { type_name: "TriState", name: "Mecha", value: "18" },
-          { type_name: "TriState", name: "Medical", value: "19" },
-          { type_name: "TriState", name: "Mystery", value: "20" },
-          { type_name: "TriState", name: "Philosophical", value: "21" },
-          { type_name: "TriState", name: "Psychological", value: "22" },
-          { type_name: "TriState", name: "Romance", value: "23" },
-          { type_name: "TriState", name: "Sci-Fi", value: "24" },
-          { type_name: "TriState", name: "Slice of Life", value: "25" },
-          { type_name: "TriState", name: "Smut", value: "87268" },
-          { type_name: "TriState", name: "Sports", value: "26" },
-          { type_name: "TriState", name: "Superhero", value: "27" },
-          { type_name: "TriState", name: "Thriller", value: "28" },
-          { type_name: "TriState", name: "Tragedy", value: "29" },
-          { type_name: "TriState", name: "Wuxia", value: "30" },
-          { type_name: "TriState", name: "Aliens", value: "31" },
-          { type_name: "TriState", name: "Animals", value: "32" },
-          { type_name: "TriState", name: "Cooking", value: "33" },
-          { type_name: "TriState", name: "Cross Dressing", value: "34" },
-          { type_name: "TriState", name: "Delinquents", value: "35" },
-          { type_name: "TriState", name: "Demons", value: "36" },
-          { type_name: "TriState", name: "Genderswap", value: "37" },
-          { type_name: "TriState", name: "Ghosts", value: "38" },
-          { type_name: "TriState", name: "Gyaru", value: "39" },
-          { type_name: "TriState", name: "Harem", value: "40" },
-          { type_name: "TriState", name: "Incest", value: "41" },
-          { type_name: "TriState", name: "Loli", value: "42" },
-          { type_name: "TriState", name: "Mafia", value: "43" },
-          { type_name: "TriState", name: "Magic", value: "44" },
-          { type_name: "TriState", name: "Martial Arts", value: "45" },
-          { type_name: "TriState", name: "Military", value: "46" },
-          { type_name: "TriState", name: "Monster Girls", value: "47" },
-          { type_name: "TriState", name: "Monsters", value: "48" },
-          { type_name: "TriState", name: "Music", value: "49" },
-          { type_name: "TriState", name: "Ninja", value: "50" },
-          { type_name: "TriState", name: "Office Workers", value: "51" },
-          { type_name: "TriState", name: "Police", value: "52" },
-          { type_name: "TriState", name: "Post-Apocalyptic", value: "53" },
-          { type_name: "TriState", name: "Reincarnation", value: "54" },
-          { type_name: "TriState", name: "Reverse Harem", value: "55" },
-          { type_name: "TriState", name: "Samurai", value: "56" },
-          { type_name: "TriState", name: "School Life", value: "57" },
-          { type_name: "TriState", name: "Shota", value: "58" },
-          { type_name: "TriState", name: "Supernatural", value: "59" },
-          { type_name: "TriState", name: "Survival", value: "60" },
-          { type_name: "TriState", name: "Time Travel", value: "61" },
-          { type_name: "TriState", name: "Traditional Games", value: "62" },
-          { type_name: "TriState", name: "Vampires", value: "63" },
-          { type_name: "TriState", name: "Video Games", value: "64" },
-          { type_name: "TriState", name: "Villainess", value: "65" },
-          { type_name: "TriState", name: "Virtual Reality", value: "66" },
-          { type_name: "TriState", name: "Zombies", value: "67" },
-        ],
-      },
-      {
-        type_name: "GroupFilter",
         name: "Type",
         state: [
           { type_name: "CheckBox", name: "Manga", value: "manga" },
           { type_name: "CheckBox", name: "Manhwa", value: "manhwa" },
           { type_name: "CheckBox", name: "Manhua", value: "manhua" },
           { type_name: "CheckBox", name: "Other", value: "other" },
-        ],
-      },
-      {
-        type_name: "GroupFilter",
-        name: "Demographic",
-        state: [
-          { type_name: "TriState", name: "Shoujo", value: "1" },
-          { type_name: "TriState", name: "Shounen", value: "2" },
-          { type_name: "TriState", name: "Josei", value: "3" },
-          { type_name: "TriState", name: "Seinen", value: "4" },
         ],
       },
       {
