@@ -308,63 +308,85 @@ class DefaultExtension extends MProvider {
     };
   }
 
-  async _fetchAllChapters(hashId) {
-    const seen = new Map(); // chapter number -> raw API item
-    let page = 1;
-    let hasMore = true;
+  async getDetail(url) {
+  const parts = url.replace(/^\/+/, "").split("/");
+  const hashPart = parts[parts.length - 1]; 
+  const hashId = hashPart.split("-")[0]; 
 
-    while (hasMore) {
-      const url = this.buildUrl(`manga/${hashId}/chapters`, {
-        "order[number]": "desc",
-        limit: 100,
-        page,
+  const params = {
+    "includes[]": ["demographic", "genre", "theme", "author", "artist", "publisher"]
+  };
+  
+  const apiUrl = this.buildUrl(`manga/${hashId}`, params);
+  const data = await this.fetchJson(apiUrl);
+  const manga = data?.result;
+
+  if (!manga) throw new Error("Manga not found");
+
+  let description = "";
+  const score = this.fancyScore(manga.rated_avg);
+  if (score) description += score + "\n\n";
+  if (manga.synopsis) description += manga.synopsis;
+
+  const genres = [];
+  if (manga.type) genres.push(manga.type.toUpperCase());
+  if (manga.genre) manga.genre.forEach(g => genres.push(g.title));
+  if (manga.theme) manga.theme.forEach(t => genres.push(t.title));
+  if (manga.is_nsfw) genres.push("NSFW");
+
+  // Fetch chapters - Ensure this completes before returning
+  const chapters = await this._fetchAllChapters(hashId);
+
+  return {
+    name: manga.title,
+    description: description,
+    imageUrl: this.posterUrl(manga.poster, "large"),
+    author: manga.author?.map(a => a.title).join(", ") || "",
+    artist: manga.artist?.map(a => a.title).join(", ") || "",
+    genre: genres,
+    status: this.statusCode(manga.status),
+    chapters: chapters // This list must not be empty
+  };
+}
+
+async _fetchAllChapters(hashId) {
+  const chapters = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const url = this.buildUrl(`manga/${hashId}/chapters`, {
+      "order[number]": "desc",
+      limit: 100,
+      page: page,
+    });
+    
+    const data = await this.fetchJson(url);
+    const items = data?.result?.items || [];
+    
+    if (items.length === 0) break;
+
+    for (const ch of items) {
+      let chapName = `Chapter ${ch.number}`;
+      if (ch.name) chapName += `: ${ch.name}`;
+
+      chapters.push({
+        name: chapName,
+        // Ensure the URL is correctly formatted for getPageList
+        url: `${hashId}/${ch.chapter_id}`, 
+        // Convert seconds to milliseconds string
+        dateUpload: ch.updated_at ? String(ch.updated_at * 1000) : null,
+        scanlator: ch.scanlation_group?.name || (ch.is_official ? "Official" : "Unknown")
       });
-      const data = await this.fetchJson(url);
-      const items = data?.result?.items || [];
-      const pagination = data?.result?.pagination || {};
-
-      for (const ch of items) {
-        const key = ch.number;
-        const existing = seen.get(key);
-        if (!existing) {
-          seen.set(key, ch);
-        } else {
-          const newIsOfficial = ch.scanlation_group_id === 9275 || ch.is_official === 1;
-          const curIsOfficial = existing.scanlation_group_id === 9275 || existing.is_official === 1;
-          const better =
-            (newIsOfficial && !curIsOfficial) ? true :
-              (!newIsOfficial && curIsOfficial) ? false :
-                ch.votes !== existing.votes ? ch.votes > existing.votes :
-                  ch.updated_at > existing.updated_at;
-          if (better) seen.set(key, ch);
-        }
-      }
-
-      hasMore =
-        (pagination.current_page || pagination.page || 1) <
-        (pagination.last_page || 1);
-      page++;
     }
 
-    return Array.from(seen.values()).map((ch) => {
-      let name = `Chapter ${String(ch.number).replace(/\.0$/, "")}`;
-      if (ch.name && ch.name.trim() !== "") name += `: ${ch.name}`;
-
-      let scanlator = "Unknown";
-      if (ch.scanlation_group?.name) {
-        scanlator = ch.scanlation_group.name;
-      } else if (ch.is_official === 1 || ch.is_official === true) {
-        scanlator = "Official";
-      }
-
-      return {
-        name,
-        url: `title/${hashId}/${ch.chapter_id}`,
-        dateUpload: String((ch.updated_at || 0) * 1000),
-        scanlator,
-      };
-    });
+    const pagination = data?.result?.pagination;
+    hasMore = pagination ? (page < pagination.last_page) : false;
+    page++;
   }
+
+  return chapters;
+}
 
   // ── Page List ─────────────────────────────────────────────────────────────
 
