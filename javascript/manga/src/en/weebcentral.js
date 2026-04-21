@@ -48,19 +48,15 @@ var order = filters?.[1]?.values?.[filters?.[1]?.state]?.value ?? ""
 var translation = filters?.[2]?.values?.[filters?.[2]?.state]?.value ?? ""
 
 var status = ""
-if (filters?.[3]?.state) {
-    for (var filter of filters[3].state) {
-        if (filter?.state === true)
-            status += `&included_status=${filter.value}`
-    }
+for (var filter of (filters?.[3]?.state ?? [])) {
+    if (filter?.state === true)
+        status += `&included_status=${filter.value}`
 }
 
-var type = ""
-if (filters?.[4]?.state) {
-    for (var filter of filters[4].state) {
-        if (filter?.state === true)
-            type += `&included_type=${filter.value}`
-    }
+var tags = ""
+for (var filter of (filters?.[4]?.state ?? [])) {
+    if (filter?.state === true)
+        tags += `&included_type=${filter.value}`
 }
         var slug = `/search/data?limit=32&offset=${offset}&author=&text=${query}&sort=${sort}&order=${order}&official=${translation}${status}${type}${tags}&display_mode=Full%20Display`
         var doc = await this.request(slug);
