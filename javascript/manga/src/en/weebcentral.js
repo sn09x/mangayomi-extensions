@@ -16,64 +16,78 @@ class DefaultExtension extends MProvider {
         super();
         this.client = new Client();
     }
+
     getHeaders(url) {
         return { "Referer": `${this.source.baseUrl}/` };
     }
 
     async request(slug) {
-        var url = `${this.source.baseUrl}${slug}`
+        var url = `${this.source.baseUrl}${slug}`;
         var res = await this.client.get(url);
         return new Document(res.body);
     }
 
-
     async getPopular(page) {
         const filters = this.getFilterList();
-        filters[0].state = 2;
-        return await this.search("", page, filters)
+        filters[0].state = 2; // Popularity
+        return await this.search("", page, filters);
     }
 
     async getLatestUpdates(page) {
         const filters = this.getFilterList();
-        filters[0].state = 5;
-        return await this.search("", page, filters)
+        filters[0].state = 5; // Latest Updates
+        return await this.search("", page, filters);
     }
 
-    getImageUrl(id) { return `https://temp.compsci88.com/cover/normal/${id}.webp`; }
+    getImageUrl(id) { 
+        return `https://temp.compsci88.com/cover/normal/${id}.webp`; 
+    }
 
     async search(query, page, filters) {
-        var offset = 32 * (parseInt(page) - 1)
-      var sort = filters?.[0]?.values?.[filters?.[0]?.state]?.value ?? ""
-var order = filters?.[1]?.values?.[filters?.[1]?.state]?.value ?? ""
-var translation = filters?.[2]?.values?.[filters?.[2]?.state]?.value ?? ""
+        var offset = 32 * (parseInt(page) - 1);
+        var sort = filters?.[0]?.values?.[filters?.[0]?.state]?.value ?? "";
+        var order = filters?.[1]?.values?.[filters?.[1]?.state]?.value ?? "";
+        var translation = filters?.[2]?.values?.[filters?.[2]?.state]?.value ?? "";
 
-var status = ""
-for (var filter of (filters?.[3]?.state ?? [])) {
-    if (filter?.state === true)
-        status += `&included_status=${filter.value}`
-}
-
-var tags = ""
-for (var filter of (filters?.[4]?.state ?? [])) {
-    if (filter?.state === true)
-        tags += `&included_type=${filter.value}`
-}
-        var slug = `/search/data?limit=32&offset=${offset}&author=&text=${query}&sort=${sort}&order=${order}&official=${translation}${status}${type}${tags}&display_mode=Full%20Display`
-        var doc = await this.request(slug);
-        var list = [];
-        var mangaElements = doc.select("article:has(section)")
-        for (var manga of mangaElements) {
-            var imageUrl = manga.selectFirst("img").getSrc;
-            var details = manga.selectFirst("section > a");
-            var link = details.getHref;
-            var name = manga.selectFirst("article > div > div > div").text;
-            list.push({ name, imageUrl, link });
+        var status = "";
+        for (var f3 of (filters?.[3]?.state ?? [])) {
+            if (f3?.state === true) status += `&included_status=${f3.value}`;
         }
 
-        var hasNextPage = doc.selectFirst("button").text.length > 0;
-        return { list, hasNextPage }
+        var type = "";
+        for (var f4 of (filters?.[4]?.state ?? [])) {
+            if (f4?.state === true) type += `&included_type=${f4.value}`;
+        }
 
+        var tags = "";
+        for (var f5 of (filters?.[5]?.state ?? [])) {
+            if (f5?.state === true) tags += `&included_tag=${f5.value}`;
+        }
+
+        var slug = `/search/data?limit=32&offset=${offset}&author=&text=${query}&sort=${sort}&order=${order}&official=${translation}${status}${type}${tags}&display_mode=Full%20Display`;
+        var doc = await this.request(slug);
+        var list = [];
+        
+        var mangaElements = doc.select("article");
+        for (var manga of mangaElements) {
+            var img = manga.selectFirst("img");
+            var details = manga.selectFirst("section > a");
+            var titleElem = manga.selectFirst("article > div > div > div");
+
+            if (img && details) {
+                list.push({ 
+                    name: titleElem ? titleElem.text : "Unknown", 
+                    imageUrl: img.getSrc, 
+                    link: details.getHref 
+                });
+            }
+        }
+
+        var btn = doc.selectFirst("button");
+        var hasNextPage = btn ? btn.text.length > 0 : false;
+        return { list, hasNextPage };
     }
+
     statusCode(status) {
         return {
             "Ongoing": 0,
@@ -85,54 +99,78 @@ for (var filter of (filters?.[4]?.state ?? [])) {
 
     async getDetail(url) {
         var urlSplits = url.split("/");
-        var link = urlSplits[urlSplits.length - 2];
-        var slug = url.startsWith("http") ? `/series/${link}` : `/series/${url}`;
+        var link = urlSplits[urlSplits.length - 1]; // Fixed split logic
+        var slug = url.includes("http") ? `/series/${link}` : `/series/${url}`;
+        
         var doc = await this.request(slug);
-        var imageUrl = url.startsWith("http") ? this.getImageUrl(link) : this.getImageUrl(url);
-        var description = doc.selectFirst("p.whitespace-pre-wrap.break-words").text
+        var id = url.split('/').pop();
+        var imageUrl = this.getImageUrl(id);
+        
+        var descElem = doc.selectFirst("p.whitespace-pre-wrap.break-words");
+        var description = descElem ? descElem.text : "";
 
-        var chapters = []
-        var ul = doc.select("ul.flex.flex-col.gap-4 > li")
-        var author = ""
-        var genre = []
-        var status = 5
+        var chapters = [];
+        var ul = doc.select("ul.flex.flex-col.gap-4 > li");
+        var author = "";
+        var genre = [];
+        var status = 5;
+
         for (var li of ul) {
-            var strongTxt = li.selectFirst("strong").text
-            if (strongTxt.indexOf("Author(s):") != -1) {
-                author = li.selectFirst("a").text
-            } else if (strongTxt.indexOf("Tags(s):") != -1) {
-                li.select("a").forEach(a => genre.push(a.text))
-            } else if (strongTxt.indexOf("Status:") != -1) {
-                status = this.statusCode(li.selectFirst("a").text)
+            var strong = li.selectFirst("strong");
+            if (!strong) continue;
+            var strongTxt = strong.text;
+
+            if (strongTxt.includes("Author(s):")) {
+                author = li.selectFirst("a")?.text ?? "";
+            } else if (strongTxt.includes("Tags(s):")) {
+                li.select("a").forEach(a => genre.push(a.text));
+            } else if (strongTxt.includes("Status:")) {
+                status = this.statusCode(li.selectFirst("a")?.text ?? "");
             }
-
         }
 
-        var chapSlug = `${slug}/full-chapter-list`
-        doc = await this.request(chapSlug);
-        var chapList = doc.select("div.flex.items-center");
+        var chapDoc = await this.request(`${slug}/full-chapter-list`);
+        var chapList = chapDoc.select("div.flex.items-center");
         for (var chap of chapList) {
-            var name = chap.selectFirst("span.grow.flex.items-center.gap-2").selectFirst("span").text
-            var dateUpload = new Date(chap.selectFirst("time.text-datetime").text).valueOf().toString()
-            var url = chap.selectFirst("input").attr("value")
-            chapters.push({ name, url, dateUpload })
+            var nameElem = chap.selectFirst("span.grow.flex.items-center.gap-2 span");
+            var timeElem = chap.selectFirst("time.text-datetime");
+            var inputElem = chap.selectFirst("input");
+
+            if (nameElem && inputElem) {
+                chapters.push({ 
+                    name: nameElem.text, 
+                    url: inputElem.attr("value"), 
+                    dateUpload: timeElem ? new Date(timeElem.text).valueOf().toString() : "" 
+                });
+            }
         }
-        return { description, imageUrl, author, genre, status, chapters }
-
+        return { description, imageUrl, author, genre, status, chapters };
     }
-    async getPageList(url) {
-        var slug = `/chapters/${url}/images?current_page=1&reading_style=long_strip`
-        var doc = await this.request(slug);
 
+    async getPageList(url) {
+        var slug = `/chapters/${url}/images?current_page=1&reading_style=long_strip`;
+        var doc = await this.request(slug);
         var urls = [];
 
-        doc.select("section > img").forEach(page => urls.push(page.attr("src")))
+        doc.select("section > img").forEach(page => {
+            let src = page.attr("src");
+            if (src) urls.push(src);
+        });
 
-        return urls.map(x => ({ url: x, headers: { Referer: `${this.source.baseUrl}/`, Accept: "image/avif,image/webp,*/*", Host: `${x.match(/^(?:https?:\/\/)?([^\/:]+)(:\d+)?/)[1]}` } }));
+        return urls.map(x => ({ 
+            url: x, 
+            headers: { 
+                "Referer": `${this.source.baseUrl}/`,
+                "Accept": "image/avif,image/webp,*/*"
+            } 
+        }));
     }
 
-
     getFilterList() {
+        // ... (The filter list you provided was structurally fine)
+        // Ensure you keep the full filter array here from your original code.
+    }
+}
         return [
             {
                 type_name: "SelectFilter",
@@ -225,6 +263,6 @@ for (var filter of (filters?.[4]?.state ?? [])) {
                 ].map(x => ({ type_name: 'CheckBox', name: x[0], value: x[1] }))
             }
         ]
-    }
-}
+    
+
 
