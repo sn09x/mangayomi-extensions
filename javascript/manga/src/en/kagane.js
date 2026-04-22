@@ -122,23 +122,24 @@ class KaganeExtension extends MProvider {
   // ── Popular ────────────────────────────────────────────────────────────
 
   async getPopular(page) {
-    const params = {
-      "order[views_30d]": "desc",
-      limit: 50,
-      page: page || 1,
-    };
-    const url = this.buildUrl("manga", params);
-    return this._searchFromUrl(url);
+    return this._searchWithSort("order[views_30d]", page);
   }
 
   // ── Latest Updates ─────────────────────────────────────────────────────
 
-  async getLatestUpdates(page) {
+   async getLatestUpdates(page) {
+    return this._searchWithSort("order[chapter_updated_at]", page);
+  }
+
+  async _searchWithSort(sortParam, page) {
     const params = {
-      "order[chapter_updated_at]": "desc",
+      [sortParam]: "desc",
       limit: 50,
-      page: page || 1,
+      page,
     };
+    if (this.getPreference("nsfw_pref", "show") === "hide") {
+      params["exclude_genres[]"] = NSFW_GENRE_IDS;
+    }
     const url = this.buildUrl("manga", params);
     return this._searchFromUrl(url);
   }
