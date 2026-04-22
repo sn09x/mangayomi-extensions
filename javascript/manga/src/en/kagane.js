@@ -450,4 +450,4 @@ class KaganeExtension extends MProvider {
     ];
   }
 }
-const extension = new KaganeExtension();
+const extention = DefaultExtension();
