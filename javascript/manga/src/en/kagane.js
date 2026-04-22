@@ -18,13 +18,13 @@ class DefaultExtension extends MProvider {
     }
 
     get apiUrl() {
-        return this.source.apiUrl || "https://api.kagane.org/api/v2/";
+        return this.source.apiUrl || "https://api.kagane.org/api/v1/";
     }
 
     getHeaders(url) {
         return {
             "Referer": `${this.source.baseUrl}/`,
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         };
     }
 
