@@ -45,9 +45,21 @@ class DefaultExtension extends MProvider {
     }
 
     async fetchJson(url) {
-        const res = await this.client.get(url, this.getHeaders(url));
-        return JSON.parse(res.body);
+    const res = await this.client.get(url, this.getHeaders(url));
+    
+    // 1. Check if the body actually exists
+    if (!res.body || res.body.trim() === "") {
+        throw new Error(`Empty response from: ${url}`);
     }
+
+    try {
+        return JSON.parse(res.body);
+    } catch (e) {
+        // 2. If parsing fails, it's likely an HTML Cloudflare/Error page
+        // Log the first 100 characters to see what it is
+        throw new Error(`Invalid JSON at ${url}. Received: ${res.body.substring(0, 100)}`);
+    }
+}
 
     mangaFromItem(item) {
         // Kagane typically uses slugs or hash_ids
