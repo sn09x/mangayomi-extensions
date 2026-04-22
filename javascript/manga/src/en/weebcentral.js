@@ -18,12 +18,33 @@ class DefaultExtension extends MProvider {
     }
 
     getHeaders(url) {
-        return { "Referer": `${this.source.baseUrl}/` };
+        return {
+            "Referer": `${this.source.baseUrl}/`,
+            // This pulls the device's real User-Agent automatically
+            "User-Agent": this.client.userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Upgrade-Insecure-Requests": "1"
+        };
     }
 
     async request(slug) {
         var url = `${this.source.baseUrl}${slug}`;
-        var res = await this.client.get(url);
+        var headers = this.getHeaders(url);
+        
+        // Add this specifically for the search data endpoint
+        if (slug.includes("/search/data")) {
+            headers["X-Requested-With"] = "XMLHttpRequest";
+        }
+
+        var res = await this.client.get(url, headers);
+        
+        if (res.statusCode === 403) {
+            throw new Error("Cloudflare Block: Open WebView and solve the challenge.");
+        }
         return new Document(res.body);
     }
 
