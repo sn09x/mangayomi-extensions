@@ -1,454 +1,168 @@
-const mangayomiSources = [
-  {
-    "id": 1234567891,
-    "name": "Kagane",
-    "lang": "en",
-    "baseUrl": "https://kagane.org",
-    "apiUrl": "https://yuzuki.kagane.org/api/v2/",
-    "iconUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT-LtpILLImUWhnfZz1KnRQTRGSiVYTetGYOg&s",
-    "typeSource": "single",
-    "itemType": 0,
-    "version": "0.1.0",
-    "pkgPath": "manga/src/en/kagane.js"
-  }
-];
-
 class KaganeExtension extends MProvider {
   constructor() {
     super();
     this.client = new Client();
-    this.source = mangayomiSources[0];
+    this.baseUrl = "https://kagane.org";
+    this.apiUrl = "https://yuzuki.kagane.org/api/v2/";
   }
 
-  get apiUrl() {
-    return this.source.apiUrl || "https://yuzuki.kagane.org/api/v2/";
-  }
-
-  getHeaders(url) {
+  headers() {
     return {
-      Referer: `${this.source.baseUrl}/`,
+      Referer: this.baseUrl + "/",
     };
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────
-
-  buildUrl(path, params = {}) {
-    let url = `${this.apiUrl}${path}`;
-    const pairs = [];
-    for (const [k, v] of Object.entries(params)) {
-      if (Array.isArray(v)) {
-        for (const item of v) {
-          pairs.push(`${encodeURIComponent(k)}=${encodeURIComponent(item)}`);
-        }
-      } else if (v !== null && v !== undefined && v !== "") {
-        pairs.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
-      }
-    }
-    if (pairs.length) url += "?" + pairs.join("&");
-    return url;
-  }
-
-  async fetchJson(url) {
-    const res = await this.client.get(url, this.getHeaders(url));
+  async request(url) {
+    const res = await this.client.get(url, this.headers());
     return JSON.parse(res.body);
   }
 
-  statusCode(status) {
-    return (
-      {
-        releasing: 0,
-        finished: 1,
-        on_hiatus: 2,
-        discontinued: 3,
-      }[status] ?? 5
-    );
-  }
-
-  posterUrl(poster, quality = "large") {
-    if (!poster) return null;
-    if (typeof poster === "string") return poster;
-    if (poster.large) return poster.large;
-    if (poster.medium) return poster.medium;
-    if (poster.small) return poster.small;
-    return null;
-  }
-
-  fancyScore(ratedAvg) {
-    if (!ratedAvg || ratedAvg === 0) return "";
-    const stars = Math.round(ratedAvg / 2);
-    const starStr = "★".repeat(stars) + "☆".repeat(5 - stars);
-    return `${starStr} ${ratedAvg}`;
+  buildUrl(path, params = {}) {
+    const url = new URL(this.apiUrl + path);
+    Object.keys(params).forEach(key => {
+      if (Array.isArray(params[key])) {
+        params[key].forEach(v => url.searchParams.append(key, v));
+      } else if (params[key] !== undefined && params[key] !== "") {
+        url.searchParams.append(key, params[key]);
+      }
+    });
+    return url.toString();
   }
 
   mangaFromItem(item) {
     if (!item) return null;
-    const slug = (item.title || item.name || "")
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
-    
+
     return {
-      name: item.title || item.name || "",
-      imageUrl: this.posterUrl(item.poster || item.cover),
-      link: `/title/${item.hash_id || item.id}-${slug}`,
+      name: item.title || "",
+      imageUrl: item.poster?.large || item.poster || "",
+      link: `/manga/${item.id}`,
     };
   }
 
-  // ── Preferences ────────────────────────────────────────────────────────
-
-  getPreference(key, defaultValue) {
-    const val = new SharedPreferences().get(key);
-    return val !== null && val !== undefined && val !== "" ? val : defaultValue;
-  }
-
-  getSourcePreferences() {
-    return [
-      {
-        key: "quality_pref",
-        listPreference: {
-          title: "Image Quality",
-          summary: "Select preferred image quality",
-          valueIndex: 0,
-          entries: ["Large", "Medium", "Small"],
-          entryValues: ["large", "medium", "small"],
-        },
-      },
-    ];
-  }
-
-  // ── Popular ────────────────────────────────────────────────────────────
-
+  // ── Popular ──
   async getPopular(page) {
-    const params = {
+    const url = this.buildUrl("manga", {
+      limit: 30,
+      page: page || 1,
       "order[views_30d]": "desc",
-      limit: 50,
-      page: page || 1,
-    };
-    const url = this.buildUrl("manga", params);
-    return this._searchFromUrl(url);
+    });
+
+    return this.parseList(url);
   }
 
-  // ── Latest Updates ─────────────────────────────────────────────────────
-
+  // ── Latest ──
   async getLatestUpdates(page) {
-    const params = {
+    const url = this.buildUrl("manga", {
+      limit: 30,
+      page: page || 1,
       "order[chapter_updated_at]": "desc",
-      limit: 50,
-      page: page || 1,
-    };
-    const url = this.buildUrl("manga", params);
-    return this._searchFromUrl(url);
+    });
+
+    return this.parseList(url);
   }
 
-  // ── Search ─────────────────────────────────────────────────────────────
-
-  async search(query, page, filters) {
+  // ── Search ──
+  async search(query, page) {
     const params = {
-      limit: 50,
+      limit: 30,
       page: page || 1,
     };
 
-    let sortParam = "order[views_30d]";
-    let sortValue = "desc";
-
-    // Process filters
-    if (filters && filters.length > 0) {
-      for (const filter of filters) {
-        if (filter.type_name === "SelectFilter" && filter.name === "Sort") {
-          const opt = filter.values[filter.state];
-          if (opt) {
-            sortParam = opt.param || "order[views_30d]";
-            sortValue = opt.value || "desc";
-          }
-        } else if (
-          filter.type_name === "GroupFilter" &&
-          filter.name === "Status"
-        ) {
-          const vals = filter.state
-            .filter((f) => f.state)
-            .map((f) => f.value);
-          if (vals.length) params["statuses[]"] = vals;
-        } else if (filter.type_name === "GroupFilter" && filter.name === "Type") {
-          const vals = filter.state
-            .filter((f) => f.state)
-            .map((f) => f.value);
-          if (vals.length) params["types[]"] = vals;
-        } else if (
-          filter.type_name === "GroupFilter" &&
-          filter.name === "Genres"
-        ) {
-          const included = [];
-          const excluded = [];
-          for (const f of filter.state) {
-            if (f.state === 1) included.push(f.value);
-            else if (f.state === 2) excluded.push(f.value);
-          }
-          if (included.length) params["genres[]"] = included;
-          if (excluded.length) params["exclude_genres[]"] = excluded;
-        }
-      }
+    if (query) {
+      params.keyword = query;
+      params["order[relevance]"] = "desc";
     }
-
-    if (query && query.trim() !== "") {
-      params.keyword = query.trim();
-      sortParam = "order[relevance]";
-      sortValue = "desc";
-    }
-
-    params[sortParam] = sortValue;
 
     const url = this.buildUrl("manga", params);
-    return this._searchFromUrl(url);
+    return this.parseList(url);
   }
 
-  async _searchFromUrl(url) {
+  async parseList(url) {
     try {
-      const data = await this.fetchJson(url);
-      const items = data?.result?.items || data?.data || [];
-      const pagination = data?.result?.pagination || {};
-      
-      const list = items
-        .map((item) => this.mangaFromItem(item))
-        .filter((item) => item !== null);
+      const data = await this.request(url);
+      const items = data?.result?.items || [];
 
       return {
-        list,
-        hasNextPage: pagination.has_next_page || pagination.last_page > pagination.current_page || false,
+        list: items.map(i => this.mangaFromItem(i)).filter(Boolean),
+        hasNextPage: items.length > 0,
       };
-    } catch (error) {
-      console.error("Search error:", error);
-      return {
-        list: [],
-        hasNextPage: false,
-      };
+    } catch (e) {
+      console.error(e);
+      return { list: [], hasNextPage: false };
     }
   }
 
-  // ── Manga Details ──────────────────────────────────────────────────────
-
+  // ── Details ──
   async getDetail(url) {
     try {
-      const id = url.split("-").pop();
-      const detailUrl = this.buildUrl(`manga/${id}`);
-      const data = await this.fetchJson(detailUrl);
-      const item = data?.result || data?.data || {};
+      const id = url.split("/").pop();
+      const data = await this.request(this.apiUrl + "manga/" + id);
+      const m = data?.result;
 
       return {
-        name: item.title || item.name || "",
-        imageUrl: this.posterUrl(item.poster || item.cover),
-        author: item.author || "",
-        artist: item.artist || "",
-        description: item.description || item.synopsis || "",
-        genres: item.genres || item.tags || [],
-        status: this.statusCode(item.status || "releasing"),
-        rating: this.fancyScore(item.rating || 0),
+        name: m.title,
+        imageUrl: m.poster?.large || "",
+        author: m.author || "",
+        artist: m.artist || "",
+        description: m.description || "",
+        genres: m.genres || [],
+        status: 0,
       };
-    } catch (error) {
-      console.error("Detail error:", error);
+    } catch (e) {
+      console.error(e);
       return {};
     }
   }
 
-  // ── Chapters ───────────────────────────────────────────────────────────
-
-  async getChapters(mangaUrl) {
+  // ── Chapters ──
+  async getChapters(url) {
     try {
-      const id = mangaUrl.split("-").pop();
-      const chaptersUrl = this.buildUrl(`manga/${id}/chapters`, {
-        limit: 500,
-        order: "desc",
-      });
-      
-      const data = await this.fetchJson(chaptersUrl);
-      const chapters = data?.result?.items || data?.data || [];
+      const id = url.split("/").pop();
 
-      return chapters.map((chapter, index) => ({
-        name: chapter.title || `Chapter ${chapter.number || index + 1}`,
-        url: `/title/${id}/chapter/${chapter.number || chapter.id}`,
-        dateUpload: chapter.date_upload || chapter.published_at || 0,
-        scanlator: chapter.scanlator || "",
-      }));
-    } catch (error) {
-      console.error("Chapters error:", error);
-      return [];
-    }
-  }
-
-  // ── Pages ──────────────────────────────────────────────────────────────
-
-  async getPages(chapterUrl) {
-    try {
-      // Parse chapter URL to get manga ID and chapter number
-      const parts = chapterUrl.split("/");
-      const mangaId = parts[2];
-      const chapterNum = parts[4];
-
-      const pagesUrl = this.buildUrl(
-        `manga/${mangaId}/chapter/${chapterNum}`
+      const data = await this.request(
+        this.buildUrl(`manga/${id}/chapters`, {
+          limit: 500,
+          order: "desc",
+        })
       );
 
-      const data = await this.fetchJson(pagesUrl);
-      const pages = data?.result?.pages || data?.data?.pages || [];
+      const chapters = data?.result?.items || [];
 
-      return pages.map((page, index) => ({
-        url: page.image || page.url || "",
-        index: index,
+      return chapters.map(ch => ({
+        name: ch.title || `Chapter ${ch.number}`,
+        url: `/manga/${id}/${ch.number}`,
+        dateUpload: new Date(ch.published_at).getTime() || 0,
       }));
-    } catch (error) {
-      console.error("Pages error:", error);
+    } catch (e) {
+      console.error(e);
       return [];
     }
   }
 
-  // ── Filters ────────────────────────────────────────────────────────────
+  // ── Pages ──
+  async getPages(url) {
+    try {
+      const parts = url.split("/");
+      const id = parts[2];
+      const chapter = parts[3];
 
-  async getFilters() {
-    return [
-      {
-        type_name: "SelectFilter",
-        name: "Sort",
-        state: 0,
-        values: [
-          { name: "Popular (30 days)", param: "order[views_30d]", value: "desc" },
-          { name: "Popular (all time)", param: "order[views]", value: "desc" },
-          { name: "Latest Updated", param: "order[chapter_updated_at]", value: "desc" },
-          { name: "Highest Rated", param: "order[rating]", value: "desc" },
-          { name: "Newest", param: "order[created_at]", value: "desc" },
-        ],
-      },
-      {
-        type_name: "GroupFilter",
-        name: "Status",
-        state: [],
-        groups: [
-          {
-            type_name: "CheckFilter",
-            name: "Releasing",
-            value: "releasing",
-            state: false,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Finished",
-            value: "finished",
-            state: false,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "On Hiatus",
-            value: "on_hiatus",
-            state: false,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Discontinued",
-            value: "discontinued",
-            state: false,
-          },
-        ],
-      },
-      {
-        type_name: "GroupFilter",
-        name: "Type",
-        state: [],
-        groups: [
-          {
-            type_name: "CheckFilter",
-            name: "Manga",
-            value: "manga",
-            state: false,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Manhwa",
-            value: "manhwa",
-            state: false,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Manhua",
-            value: "manhua",
-            state: false,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "One Shot",
-            value: "one_shot",
-            state: false,
-          },
-        ],
-      },
-      {
-        type_name: "GroupFilter",
-        name: "Genres",
-        state: [],
-        groups: [
-          {
-            type_name: "CheckFilter",
-            name: "Action",
-            value: "action",
-            state: 0,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Adventure",
-            value: "adventure",
-            state: 0,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Comedy",
-            value: "comedy",
-            state: 0,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Drama",
-            value: "drama",
-            state: 0,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Fantasy",
-            value: "fantasy",
-            state: 0,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Horror",
-            value: "horror",
-            state: 0,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Romance",
-            value: "romance",
-            state: 0,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Sci-Fi",
-            value: "sci_fi",
-            state: 0,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Slice of Life",
-            value: "slice_of_life",
-            state: 0,
-          },
-          {
-            type_name: "CheckFilter",
-            name: "Supernatural",
-            value: "supernatural",
-            state: 0,
-          },
-        ],
-      },
-    ];
+      const data = await this.request(
+        this.apiUrl + `manga/${id}/chapter/${chapter}`
+      );
+
+      const pages = data?.result?.pages || [];
+
+      return pages.map((p, i) => ({
+        url: p.image,
+        index: i,
+      }));
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   }
 }
+
+// IMPORTANT: global scope (fix loader issues)
 var extension = new KaganeExtension();
-var extention = extension; // alias for broken loaders
+var extention = extension;
