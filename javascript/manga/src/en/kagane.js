@@ -13,7 +13,7 @@ const mangayomiSources = [
   }
 ];
 
-class KaganeExtension extends MProvider {
+class DefaultExtension extends MProvider {
   constructor() {
     super();
     this.client = new Client();
@@ -452,4 +452,3 @@ class KaganeExtension extends MProvider {
     ];
   }
 }
-const extension = new KaganeExtension();
