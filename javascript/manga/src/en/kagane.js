@@ -1,3 +1,18 @@
+const mangayomiSources = [
+  {
+    "id": 1234567891,
+    "name": "Kagane",
+    "lang": "en",
+    "baseUrl": "https://kagane.org",
+    "apiUrl": "https://yuzuki.kagane.org/api/v2/",
+    "iconUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT-LtpILLImUWhnfZz1KnRQTRGSiVYTetGYOg&s",
+    "typeSource": "single",
+    "itemType": 0,
+    "version": "0.1.0",
+    "pkgPath": "manga/src/en/kagane.js"
+  }
+];
+
 class KaganeExtension extends MProvider {
   constructor() {
     super();
