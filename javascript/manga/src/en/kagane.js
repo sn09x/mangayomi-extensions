@@ -1,13 +1,12 @@
 const mangayomiSources = [{
-    "id": 987654321, // Ensure this is unique
+    "id": 987654321,
     "name": "Kagane",
     "lang": "en",
     "baseUrl": "https://kagane.org",
-    "apiUrl": "https://api.kagane.org/api/v2/", // Verify if it's /v1 or /v2
-    "iconUrl": "https://kagane.org/favicon.ico",
+    "apiUrl": "https://yuzuki.kagane.org/api/v2/",
     "typeSource": "single",
     "itemType": 0,
-    "version": "0.1.0",
+    "version": "0.2.1",
     "pkgPath": "manga/src/en/kagane.js"
 }];
 
@@ -17,149 +16,99 @@ class DefaultExtension extends MProvider {
         this.client = new Client();
     }
 
-    get apiUrl() {
-        return this.source.apiUrl || "https://api.kagane.org/api/v1/";
-    }
-
     getHeaders(url) {
         return {
-            "Referer": `${this.source.baseUrl}/`,
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "Referer": "https://kagane.org/",
+            "Origin": "https://kagane.org",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         };
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
-
-    buildUrl(path, params = {}) {
-        let url = `${this.apiUrl}${path}`;
-        const pairs = [];
-        for (const [k, v] of Object.entries(params)) {
-            if (Array.isArray(v)) {
-                v.forEach(item => pairs.push(`${encodeURIComponent(k)}=${encodeURIComponent(item)}`));
-            } else if (v !== null && v !== undefined && v !== "") {
-                pairs.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
-            }
+    // New helper for POST requests (Required for Kagane v2 Search)
+    async postJson(url, body) {
+        const res = await this.client.post(url, this.getHeaders(url), JSON.stringify(body));
+        if (!res.body || res.body.includes("<!DOCTYPE html>")) {
+            throw new Error("Kagane blocked the request (Cloudflare/Integrity Error).");
         }
-        if (pairs.length) url += "?" + pairs.join("&");
-        return url;
+        return JSON.parse(res.body);
     }
 
     async fetchJson(url) {
-    const res = await this.client.get(url, this.getHeaders(url));
-    
-    // 1. Check if the body actually exists
-    if (!res.body || res.body.trim() === "") {
-        throw new Error(`Empty response from: ${url}`);
-    }
-
-    try {
+        const res = await this.client.get(url, this.getHeaders(url));
+        if (!res.body || res.body.includes("<!DOCTYPE html>")) {
+            throw new Error("Invalid API response. The endpoint may have moved.");
+        }
         return JSON.parse(res.body);
-    } catch (e) {
-        // 2. If parsing fails, it's likely an HTML Cloudflare/Error page
-        // Log the first 100 characters to see what it is
-        throw new Error(`Invalid JSON at ${url}. Received: ${res.body.substring(0, 100)}`);
-    }
-}
-
-    mangaFromItem(item) {
-        // Kagane typically uses slugs or hash_ids
-        const id = item.hash_id || item.id;
-        const slug = item.slug || item.title.toLowerCase().replace(/\s+/g, '-');
-        return {
-            name: item.title,
-            imageUrl: item.poster?.large || item.poster?.medium || "",
-            link: `/manga/${id}-${slug}`
-        };
     }
 
-    // ── Popular & Latest ─────────────────────────────────────────────────────
+    // ── Navigation ──────────────────────────────────────────────────────────
 
     async getPopular(page) {
-        return this._fetchMangaList("order[views]", page);
+        // V2 uses 'series' endpoint for listing
+        const url = `${this.source.apiUrl}search/series?page=${page}&limit=24`;
+        const body = { "sort": "views", "order": "desc" };
+        const data = await this.postJson(url, body);
+        return this._parseMangaList(data);
     }
 
     async getLatestUpdates(page) {
-        return this._fetchMangaList("order[updated_at]", page);
+        const url = `${this.source.apiUrl}search/series?page=${page}&limit=24`;
+        const body = { "sort": "updated_at", "order": "desc" };
+        const data = await this.postJson(url, body);
+        return this._parseMangaList(data);
     }
-
-    async _fetchMangaList(sort, page) {
-        const params = {
-            [sort]: "desc",
-            limit: 24,
-            page: page
-        };
-        const url = this.buildUrl("manga", params);
-        const data = await this.fetchJson(url);
-        
-        const list = (data?.result?.items || []).map(i => this.mangaFromItem(i));
-        const hasNextPage = (data?.result?.pagination?.page || 1) < (data?.result?.pagination?.last_page || 1);
-        
-        return { list, hasNextPage };
-    }
-
-    // ── Search ───────────────────────────────────────────────────────────────
 
     async search(query, page, filters) {
-        const params = {
-            keyword: query,
-            limit: 24,
-            page: page
-        };
-        
-        // Add Filter Logic here if needed
-        const url = this.buildUrl("manga", params);
-        const data = await this.fetchJson(url);
-        
-        const list = (data?.result?.items || []).map(i => this.mangaFromItem(i));
+        const url = `${this.source.apiUrl}search/series?page=${page}&limit=24`;
+        const body = { "title": query }; 
+        const data = await this.postJson(url, body);
+        return this._parseMangaList(data);
+    }
+
+    _parseMangaList(data) {
+        const items = data?.result?.items || [];
+        const list = items.map(item => ({
+            name: item.title,
+            // V2 uses a separate image endpoint: /api/v2/image/<id>
+            imageUrl: `https://yuzuki.kagane.org/api/v2/image/${item.cover_image}`,
+            link: item.id // Now a UUIDv7
+        }));
         const hasNextPage = (data?.result?.pagination?.page || 1) < (data?.result?.pagination?.last_page || 1);
-        
         return { list, hasNextPage };
     }
 
-    // ── Details ──────────────────────────────────────────────────────────────
+    // ── Details & Chapters ──────────────────────────────────────────────────
 
-    async getDetail(url) {
-        // Extract ID from /manga/123-title
-        const hashId = url.split('/').pop().split('-')[0];
-        
-        const apiUrl = this.buildUrl(`manga/${hashId}`, {
-            "includes[]": ["genre", "author", "artist"]
-        });
-        
-        const data = await this.fetchJson(apiUrl);
+    async getDetail(id) {
+        const url = `${this.source.apiUrl}series/${id}`;
+        const data = await this.fetchJson(url);
         const manga = data?.result;
 
-        if (!manga) throw new Error("Manga not found");
-
-        const chapters = await this._fetchAllChapters(hashId);
+        // Fetching chapters (Kagane v2 now uses a separate 'books' or 'feed' endpoint)
+        const chapterUrl = `${this.source.apiUrl}series/${id}/chapters?limit=500`;
+        const chapterData = await this.fetchJson(chapterUrl);
+        const chapters = (chapterData?.result?.items || []).map(ch => ({
+            name: ch.name ? `Ch. ${ch.number}: ${ch.name}` : `Chapter ${ch.number}`,
+            url: ch.id,
+            dateUpload: ch.created_at ? String(new Date(ch.created_at).getTime()) : null
+        }));
 
         return {
             name: manga.title,
-            description: manga.synopsis || "",
-            imageUrl: manga.poster?.large || "",
-            author: manga.author?.map(a => a.title).join(", ") || "Unknown",
-            genre: manga.genre?.map(g => g.title) || [],
-            status: manga.status === "releasing" ? 0 : 1, // 0: Ongoing, 1: Completed
+            description: manga.synopsis,
+            imageUrl: `https://yuzuki.kagane.org/api/v2/image/${manga.cover_image}`,
+            author: manga.authors?.map(a => a.name).join(", "),
+            genre: manga.tags?.map(t => t.name), // V2 uses 'tags' instead of 'genres'
+            status: manga.status === "ongoing" ? 0 : 1,
             chapters: chapters
         };
     }
 
-    async _fetchAllChapters(hashId) {
-        const url = this.buildUrl(`manga/${hashId}/chapters`, { limit: 500 });
-        const data = await this.fetchJson(url);
-        const items = data?.result?.items || [];
-
-        return items.map(ch => ({
-            name: ch.name ? `Ch. ${ch.number}: ${ch.name}` : `Chapter ${ch.number}`,
-            url: ch.chapter_id || ch.id,
-            dateUpload: ch.created_at ? String(new Date(ch.created_at).getTime()) : null
-        }));
-    }
-
-    // ── Pages ────────────────────────────────────────────────────────────────
-
     async getPageList(chapterId) {
-        const url = this.buildUrl(`chapters/${chapterId}`);
+        // WARNING: Kagane v2 often requires an x-integrity-token for this call
+        const url = `${this.source.apiUrl}chapters/${chapterId}`;
         const data = await this.fetchJson(url);
         const images = data?.result?.images || [];
 
@@ -169,10 +118,7 @@ class DefaultExtension extends MProvider {
         }));
     }
 
-    getFilterList() {
-        return []; // You can add the Filter objects here later
-    }
+    getFilterList() { return []; }
 }
 
-// Final Step: Instantiate the class
 const extension = new DefaultExtension();
