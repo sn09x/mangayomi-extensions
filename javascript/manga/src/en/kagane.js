@@ -13,13 +13,12 @@ const mangayomiSources = [
   }
 ];
 
-class KaganeExtension extends MProvider {
-  constructor() {
-    super();
-    this.client = new Client();
-    this.baseUrl = "https://kagane.org";
-    this.apiUrl = "https://yuzuki.kagane.org/api/v2/";
-  }
+class DefaultExtension extends MProvider {
+constructor() {
+  super();
+  this.client = new Client();
+  this.source = mangayomiSources[0]; // 🔴 REQUIRED
+}
 
   headers() {
     return {
