@@ -139,10 +139,30 @@ class DefaultExtension extends MProvider {
         return { description, imageUrl, author, genre: genres, status, chapters };
     }
 
-    async getPageList(id) {
+   async getPageList(id) {
         const slug = `/chapters/${id}/images?current_page=1&reading_style=long_strip`;
         const doc = await this.request(slug);
         const images = doc.select("section > img");
+
+        return images.map(img => {
+            const src = img.attr("src");
+            // Extract the domain (e.g., temp.compsci88.com)
+            const host = src.split('//')[1].split('/')[0];
+
+            return {
+                url: src,
+                headers: {
+                    "Referer": `${this.source.baseUrl}/`,
+                    "User-Agent": this.client.userAgent,
+                    "Host": host, // CRITICAL: Must match the image URL domain
+                    "Accept": "image/avif,image/webp,*/*",
+                    "Sec-Fetch-Dest": "image",
+                    "Sec-Fetch-Mode": "no-cors",
+                    "Sec-Fetch-Site": "cross-site"
+                }
+            };
+        });
+    
 
         return images.map(img => {
             const src = img.attr("src");
