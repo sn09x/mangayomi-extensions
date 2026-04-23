@@ -19,23 +19,22 @@ class DefaultExtension extends MProvider {
 
     // ── DYNAMIC HEADERS ──────────────────────────────────────────────────────
     // This allows the code to work on iOS, Android, and PC by adapting
-    getHeaders(url, isData = false) {
-        const headers = {
-            "Referer": "https://weebcentral.com/",
-            "User-Agent": this.client.userAgent || "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
-            "Accept": isData ? "application/json, text/plain, */*" : "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Sec-Fetch-Dest": isData ? "empty" : "document",
-            "Sec-Fetch-Mode": isData ? "cors" : "navigate",
-            "Sec-Fetch-Site": "same-origin"
-        };
+   getHeaders(url) {
+    const isImage = url.includes("compsci88.com") || url.includes(".webp");
+    
+    // This pulls the EXACT string your app is currently using in Settings
+    const appUserAgent = this.client.userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-        // This is the "Magic" header that bypasses many Cloudflare bot-checks on PC/Android
-        if (isData) {
-            headers["X-Requested-With"] = "XMLHttpRequest";
-        }
-        return headers;
-    }
+    return {
+        "Referer": "https://weebcentral.com/",
+        "User-Agent": appUserAgent,
+        "Accept": isImage ? "image/avif,image/webp,*/*" : "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Sec-Fetch-Dest": isImage ? "image" : "document",
+        "Sec-Fetch-Mode": isImage ? "no-cors" : "navigate",
+        "Sec-Fetch-Site": isImage ? "cross-site" : "same-origin"
+    };
+}
 
     async request(slug) {
         const url = `${this.source.baseUrl}${slug}`;
