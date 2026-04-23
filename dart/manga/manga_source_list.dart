@@ -8,6 +8,7 @@ import 'src/en/Atsumaru/source.dart';
 import 'src/en/allanime/source.dart';
 import 'src/en/mangahere/source.dart';
 import 'src/en/mangapark/source.dart';
+import 'src/en/weebcentral/source.dart';
 
 List<Source> dartMangasourceList = [
   ...madaraSourcesList,

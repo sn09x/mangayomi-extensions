@@ -243,71 +243,6 @@ class DefaultExtension extends MProvider {
     return { list, hasNextPage };
   }
 
-  // ── Manga Detail ──────────────────────────────────────────────────────────
-
-  async getDetail(url) {
-    // url is like "/title/r1234-manga-title" (the path stored in link)
-    const parts = url.replace(/^\/+/, "").split("/");
-    const hashPart = parts[parts.length - 1]; // "r1234-manga-title"
-    const hashId = hashPart.split("-")[0]; // "r1234"
-
-    const params = {
-      "includes[]": [
-        "demographic",
-        "genre",
-        "theme",
-        "author",
-        "artist",
-        "publisher",
-      ],
-    };
-    const apiUrl = this.buildUrl(`manga/${hashId}`, params);
-    const data = await this.fetchJson(apiUrl);
-    const manga = data?.result;
-
-    if (!manga) throw new Error("Manga not found");
-
-    // Build description
-    let description = "";
-    const score = this.fancyScore(manga.rated_avg);
-    if (score) description += score + "\n\n";
-    if (manga.synopsis) description += manga.synopsis;
-
-    // Build genres list
-    const genres = [];
-    const mangaType = manga.type;
-    if (mangaType === "manhwa") genres.push("Manhwa");
-    else if (mangaType === "manhua") genres.push("Manhua");
-    else if (mangaType === "manga") genres.push("Manga");
-    else if (mangaType) genres.push("Other");
-
-    for (const arr of [manga.genre, manga.theme, manga.demographic]) {
-      if (arr && arr.length) arr.forEach((t) => genres.push(t.title));
-    }
-    if (manga.is_nsfw) genres.push("NSFW");
-
-    const status = this.statusCode(manga.status);
-
-    const author = manga.author?.map((a) => a.title).join(", ") || "";
-    const artist = manga.artist?.map((a) => a.title).join(", ") || "";
-
-    const imageUrl = this.posterUrl(manga.poster, "large");
-
-    // Fetch chapters
-    const chapters = await this._fetchAllChapters(hashId);
-
-    return {
-      name: manga.title,
-      description,
-      imageUrl,
-      author,
-      artist,
-      genre: genres,
-      status,
-      chapters,
-    };
-  }
-
   async getDetail(url) {
   const parts = url.replace(/^\/+/, "").split("/");
   const hashPart = parts[parts.length - 1]; 
@@ -566,4 +501,3 @@ async _fetchAllChapters(hashId) {
     ];
   }
 }
-
