@@ -36,19 +36,36 @@ class DefaultExtension extends MProvider {
     };
 }
 
-    async request(slug) {
+    async request(slug, isData = false) {
         const url = `${this.source.baseUrl}${slug}`;
-        const isDataEndpoint = slug.includes("/data") || slug.includes("/images");
-        
-        // CRITICAL: You MUST pass getHeaders into the client call
-        const res = await this.client.get(url, this.getHeaders(url, isDataEndpoint));
+        const headers = {
+            "Referer": "https://weebcentral.com/",
+            "User-Agent": this.client.userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": isData ? "application/json, text/plain, */*" : "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "X-Requested-With": "XMLHttpRequest", // Forces bypass on some CF configs
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin"
+        };
+
+        const res = await this.client.get(url, headers);
         
         if (res.statusCode === 403) {
-            throw new Error("403 Forbidden: Cloudflare is fingerprinting the scraper. Open WebView and click a Manga Title.");
+            throw new Error("Cloudflare Level 2 Block: Please Login in WebView to sync account cookies.");
         }
         return new Document(res.body);
     }
 
+    async getDetail(url) {
+        // Use the 'isData' flag for the chapter list call
+        const slug = url.includes("weebcentral.com") ? url.split("weebcentral.com")[1] : url;
+        const doc = await this.request(slug, false); // Get HTML
+        
+        // When fetching the chapter list, it's a data call
+        const chapSlug = `${slug}/full-chapter-list`;
+        const chapDoc = await this.request(chapSlug, true); 
+        
+        // ... rest of your parsing logic
+    }
     // ── NAVIGATION ───────────────────────────────────────────────────────────
 
     async getPopular(page) {
