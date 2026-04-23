@@ -1,12 +1,11 @@
-import 'package:mangayomi/bridge_lib.dart';
-import 'dart:convert';
+import 'package:mangayomi/mangayomi.dart';
 
 class WeebCentralSource extends MProvider {
   WeebCentralSource() {
     name = "WeebCentral";
     baseUrl = "https://weebcentral.com";
     lang = "en";
-    requiresWebView = true; // critical for Cloudflare bypass
+    requiresWebView = true; // Cloudflare bypass
   }
 
   @override
@@ -31,7 +30,6 @@ class WeebCentralSource extends MProvider {
     final description = document.querySelector("p.whitespace-pre-wrap")?.text ?? "";
     final author = document.querySelector("li:contains('Author')")?.text.replaceAll("Author:", "").trim() ?? "";
 
-    // Try full chapter list first
     List<Chapter> chapters = [];
     try {
       final resCh = await client.get("$url/full-chapter-list");
@@ -42,7 +40,6 @@ class WeebCentralSource extends MProvider {
         return Chapter(name: name, url: chUrl);
       }).toList();
     } catch (_) {
-      // Fallback: scrape from main page
       chapters = document.querySelectorAll("a[href*='/chapter/']").map((el) {
         final name = el.text.trim();
         final chUrl = el.attributes["href"] ?? "";
